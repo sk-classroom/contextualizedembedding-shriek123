@@ -1,0 +1,41 @@
+name: Autograding Tests
+'on':
+- push
+- workflow_dispatch
+- repository_dispatch
+permissions:
+  checks: write
+  actions: read
+  contents: read
+jobs:
+  run-autograding-tests:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-classroom[bot]'
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - name: Contextual Embedding test
+      id: contextual-embedding-test
+      uses: education/autograding-command-grader@v1
+      with:
+        test-name: Contextual Embedding test
+        setup-command: pip install -r requirements-test.txt
+        command: python tests/test.py TestContextualEmbedding.test_contextual_embedding
+        timeout: 10
+        max-score: 10
+    - name: Non Contextual Embedding
+      id: non-contextual-embedding
+      uses: education/autograding-command-grader@v1
+      with:
+        test-name: Non Contextual Embedding
+        setup-command: ''
+        command: python tests/test.py TestContextualEmbedding.test_non_contextual_embedding
+        timeout: 10
+        max-score: 10
+    - name: Autograding Reporter
+      uses: education/autograding-grading-reporter@v1
+      env:
+        CONTEXTUAL-EMBEDDING-TEST_RESULTS: "${{steps.contextual-embedding-test.outputs.result}}"
+        NON-CONTEXTUAL-EMBEDDING_RESULTS: "${{steps.non-contextual-embedding.outputs.result}}"
+      with:
+        runners: contextual-embedding-test,non-contextual-embedding
